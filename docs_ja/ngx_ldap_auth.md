@@ -28,6 +28,8 @@ ngx_ldap_authの設定ファイルは、TOMLフォーマットで、以下がサ
 ```ini
 socket_type = "tcp"
 socket_path = "127.0.0.1:9200"
+#cache_seconds = 0
+#use_etag = true
 auth_realm = "TEST Authentication"
 
 host_url = "ldaps://ldap.example.com"
@@ -45,14 +47,18 @@ timeout = 5000
 
 設定ファイルの各パラメータの意味は以下のとおりです。
 
-* **socket\_type** - tcp(TCPソケット)とunix(Unixドメインソケット)が指定できます。
-* **socket\_path** - tcpの場合はIPアドレスとポート番号、unixの場合はソケットファイルのファイルパスを指定します。
-* **auth\_realm** - HTTPのrealmの文字列です。
-* **host\_url** - LDAPサーバの接続アドレスのURLです。パス部分は利用しません。
-* **start\_tls** - TLSのStartTLSを利用する場合は1を指定します。
-* **skip\_cert\_verify** - 証明書のチェック結果を無視する場合は1を指定します。
-* **root\_ca\_files** - CA証明書のPEMファイルのリストです。LDAPサーバが、プライベートCAによる証明書を利用している時に使います。
-* **base\_dn** - LDAPサーバに接続するときのbase DNです。
-* **bind\_dn** - LDAPのbind処理を行う時に使うbind DNです。%sが含まれているとリモートユーザ名を埋め込みます。%%が含まれていると%に変換します
-* **uniq\_filter** - 設定された場合、bind処理のあとこの値をフィルターに指定してsearch処理が実施されます。その結果応答されたDNが1つだった場合以外は、認証の失敗として扱います。この値を指定しない場合は、bind処理の結果だけで判定が行われます。
-* **timeout** - LDAPサーバとの通信に利用するタイムアウト時間(単位はms)です。
+|パラメータ名|意味|
+| :--- | :--- |
+| **socket\_type** | tcp(TCPソケット)とunix(Unixドメインソケット)が指定できます。 |
+| **socket\_path** | tcpの場合はIPアドレスとポート番号、unixの場合はソケットファイルのファイルパスを指定します。 |
+| **cache\_seconds** | nginxに渡すキャッシュ期間の秒数です。ただし、その値が0の場合、キャッシュを利用しなくなります。<br>詳細については[認証キャッシュ制御](proxy_cache.md)を参照してください。 |
+| **use_etag** | `true`に設定すると`ETag`タグを使ったキャッシュの検証を行なうようになります。<br>詳細については[認証キャッシュ制御](proxy_cache.md)を参照してください。 |
+| **auth\_realm** | HTTPのrealmの文字列です。 |
+| **host\_url** | LDAPサーバの接続アドレスのURLです。パス部分は利用しません。 |
+| **start\_tls** | TLSのStartTLSを利用する場合は1を指定します。 |
+| **skip\_cert\_verify** | 証明書のチェック結果を無視する場合は1を指定します。 |
+| **root\_ca\_files** | CA証明書のPEMファイルのリストです。LDAPサーバが、プライベートCAによる証明書を利用している時に使います。 |
+| **base\_dn** | LDAPサーバに接続するときのbase DNです。 |
+| **bind\_dn** | LDAPのbind処理を行う時に使うbind DNです。`%s`が含まれているとリモートユーザ名を埋め込みます。`%%`が含まれていると`%`に変換します |
+| **uniq\_filter** | 設定された場合、bind処理のあとこの値をフィルターに指定してsearch処理が実施されます。その結果応答されたDNが1つだった場合以外は、認証の失敗として扱います。この値を指定しない場合は、bind処理の結果だけで判定が行われます。 |
+| **timeout** | LDAPサーバとの通信に利用するタイムアウト時間(単位はms)です。 |

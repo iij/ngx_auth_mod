@@ -1,7 +1,8 @@
 # ngx\_simple\_auth
 
 [nginx auth request module](http://nginx.org/en/docs/http/ngx_http_auth_request_module.html)に、設定ファイルだけの単純な認証を提供するモジュールです。  
-認証に外部データを使わないので、[nginx auth request module](http://nginx.org/en/docs/http/ngx_http_auth_request_module.html)の設定を確認をするために使えます。
+このモジュールの用途は、[nginx auth request module](http://nginx.org/en/docs/http/ngx_http_auth_request_module.html)の設定確認のみです。
+Basic認証の用途には、nginxの[auth basic module](http://nginx.org/en/docs/http/ngx_http_auth_basic_module.html)を利用してください。
 
 ## エラー処理
 
@@ -27,6 +28,7 @@ nginx側の設定方法については、[auth request moduleのドキュメン�
 ```ini
 socket_type = "tcp"
 socket_path = "127.0.0.1:9200"
+#cache_seconds = 0
 auth_realm = "TEST Authentication"
 
 [password]
@@ -36,8 +38,11 @@ user1 = "hogehoge"
 
 設定ファイルの各パラメータの意味は以下のとおりです。
 
-* **socket\_type** - tcp(TCPソケット)とunix(Unixドメインソケット)が指定できます。
-* **socket\_path** - tcpの場合はIPアドレスとポート番号、unixの場合はソケットファイルのファイルパスを指定します。
-* **auth\_realm** - HTTPのrealmの文字列です。
-* **[password]** 部分 - TOML table形式のユーザーとパスワードのマッピングデータです。
+| パラメータ名 | 意味 |
+| :--- | :--- |
+| **socket\_type** | tcp(TCPソケット)とunix(Unixドメインソケット)が指定できます。 |
+| **socket\_path** | tcpの場合はIPアドレスとポート番号、unixの場合はソケットファイルのファイルパスを指定します。 |
+| **cache\_seconds** | nginxに渡すキャッシュ期間の秒数です。ただし、その値が0の場合、キャッシュを利用しなくなります。<br>詳細については[認証キャッシュ制御](proxy_cache.md)を参照してください。 |
+| **auth\_realm** | HTTPのrealmの文字列です。 |
+| **[password]** 部分 | TOML table形式のユーザーとパスワードのマッピングデータです。 |
 
