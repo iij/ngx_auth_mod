@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/l4go/task"
 	"github.com/naoina/toml"
@@ -27,9 +28,11 @@ func warn(format string, v ...interface{}) {
 }
 
 type NgxLdapAuthConfig struct {
-	SocketType string
-	SocketPath string
-	AuthRealm  string `toml:",omitempty"`
+	SocketType   string
+	SocketPath   string
+	CacheSeconds uint32 `toml:",omitempty"`
+	UseEtag      bool   `toml:",omitempty"`
+	AuthRealm    string `toml:",omitempty"`
 
 	HostUrl        string
 	StartTls       int      `toml:",omitempty"`
@@ -43,8 +46,12 @@ type NgxLdapAuthConfig struct {
 
 var SocketType string
 var SocketPath string
+var CacheSeconds uint32
+var UseEtag bool
 var AuthRealm string
 var LdapAuthConfig *ldap_auth.Config
+
+var StartTimeMS int64
 
 func init() {
 	flag.CommandLine.SetOutput(os.Stderr)
@@ -80,6 +87,9 @@ func init() {
 		die("Bad socket type: %s", SocketType)
 	}
 
+	CacheSeconds = cfg.CacheSeconds
+	UseEtag = cfg.UseEtag
+
 	if cfg.AuthRealm == "" {
 		die("relm is required")
 	}
@@ -95,6 +105,8 @@ func init() {
 		UniqueFilter:   cfg.UniqFilter,
 		Timeout:        cfg.Timeout,
 	}
+
+	StartTimeMS = time.Now().UnixMicro()
 }
 
 var ErrUnsupportedSocketType = errors.New("unsupported socket type.")

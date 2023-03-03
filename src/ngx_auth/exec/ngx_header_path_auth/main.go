@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"regexp"
 	"syscall"
+	"time"
 
 	"github.com/l4go/task"
 	"github.com/naoina/toml"
@@ -28,22 +29,25 @@ func warn(format string, v ...interface{}) {
 }
 
 type NgxHeaderPathAuthConfig struct {
-	SocketType string
-	SocketPath string
-	PathHeader string `toml:",omitempty"`
-	UserHeader string `toml:",omitempty"`
+	SocketType   string
+	SocketPath   string
+	CacheSeconds uint32 `toml:",omitempty"`
+	PathHeader   string `toml:",omitempty"`
+	UserHeader   string `toml:",omitempty"`
 
 	Authz struct {
-		UserMap      string
-		PathPattern  string
-		NomatchRight string            `toml:",omitempty"`
-		DefaultRight string            `toml:",omitempty"`
-		PathRight    map[string]string `toml:",omitempty"`
+		UserMapConfig string `toml:",omitempty"`
+		UserMap       string
+		PathPattern   string
+		NomatchRight  string            `toml:",omitempty"`
+		DefaultRight  string            `toml:",omitempty"`
+		PathRight     map[string]string `toml:",omitempty"`
 	}
 }
 
 var SocketType string
 var SocketPath string
+var CacheSeconds uint32
 
 var PathHeader = "X-Authz-Path"
 var PathPatternReg *regexp.Regexp
@@ -53,6 +57,8 @@ var UserMap *authz.UserMap = nil
 var NomatchRight string
 var DefaultRight string
 var PathRight map[string]string
+
+var StartTimeMS int64
 
 func init() {
 	flag.CommandLine.SetOutput(os.Stderr)
@@ -88,6 +94,8 @@ func init() {
 		die("Bad socket type: %s", SocketType)
 	}
 
+	CacheSeconds = cfg.CacheSeconds
+
 	if cfg.PathHeader != "" {
 		PathHeader = cfg.PathHeader
 	}
@@ -96,9 +104,17 @@ func init() {
 		UserHeader = cfg.UserHeader
 	}
 
-	UserMap, err = authz.NewUserMap(cfg.Authz.UserMap)
+	var user_map_cfg *authz.UserMapConfig
+	user_map_cfg, err = authz.NewUserMapConfig(cfg.Authz.UserMapConfig)
 	if err != nil {
-		die("user map parse error: %s", cfg.Authz.UserMap)
+		die("user map config parse error: %s: %s",
+			cfg.Authz.UserMapConfig, err)
+		return
+	}
+
+	UserMap, err = authz.NewUserMap(cfg.Authz.UserMap, user_map_cfg)
+	if err != nil {
+		die("user map parse error: %s: %s", cfg.Authz.UserMap, err)
 		return
 	}
 
@@ -124,6 +140,8 @@ func init() {
 			die("bad path_right parameter: %s -> %s", p, r)
 		}
 	}
+
+	StartTimeMS = time.Now().UnixMicro()
 }
 
 var ErrUnsupportedSocketType = errors.New("unsupported socket type.")
