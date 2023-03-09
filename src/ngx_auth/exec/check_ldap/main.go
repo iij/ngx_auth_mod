@@ -21,7 +21,7 @@ func warn(format string, v ...interface{}) {
 
 var SocketType string
 var SocketPath string
-var AuthRealm string
+
 var LdapAuthConfig *ldap_auth.Config
 var Username string
 
@@ -77,7 +77,6 @@ func init() {
 	if cfg.AuthRealm == "" {
 		die("relm is required")
 	}
-	AuthRealm = cfg.AuthRealm
 
 	LdapAuthConfig = &ldap_auth.Config{
 		HostUrl:        cfg.HostUrl,

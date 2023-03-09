@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/naoina/toml"
 
@@ -26,16 +27,20 @@ func warn(format string, v ...interface{}) {
 }
 
 type TestAuthConfig struct {
-	SocketType string
-	SocketPath string
-	Password   map[string]string
-	AuthRealm  string
+	SocketType   string
+	SocketPath   string
+	CacheSeconds uint `toml:",omitempty"`
+	Password     map[string]string
+	AuthRealm    string
 }
 
 var SocketType string
 var SocketPath string
+var CacheSeconds uint = 0
 var Password map[string]string
 var AuthRealm string
+
+var StartTimeMS int64
 
 func init() {
 	flag.CommandLine.SetOutput(os.Stderr)
@@ -71,12 +76,15 @@ func init() {
 		die("Bad socket type: %s", SocketType)
 	}
 
+	CacheSeconds = cfg.CacheSeconds
+
 	if cfg.AuthRealm == "" {
 		die("relm is required")
 	}
 	AuthRealm = cfg.AuthRealm
-
 	Password = cfg.Password
+
+	StartTimeMS = time.Now().UnixMicro()
 }
 
 var ErrUnsupportedSocketType = errors.New("unsupported socket type.")

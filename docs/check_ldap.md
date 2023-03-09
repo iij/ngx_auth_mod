@@ -16,5 +16,3 @@ check_ldap <config file> <user name>
 
 Execute with the configuration file and user name as arguments.
 After execution, enter the password and the result will be output.
-
-The configuration file is the same as [ngx\_ldap\_auth](ngx_ldap_auth.md).

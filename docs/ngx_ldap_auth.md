@@ -9,7 +9,7 @@ On error, the process terminates with an unsuccessful status.
 ## How to start
 
 Run it on the command line like this:
-
+[ngx_header_path_auth](ngx_header_path_auth.md)
 ```
 ngx_ldap_auth <config file>
 ```
@@ -28,6 +28,8 @@ The **ngx\_ldap\_auth** configuration file is in TOML format, and the following 
 ```ini
 socket_type = "tcp"
 socket_path = "127.0.0.1:9200"
+#cache_seconds = 0
+#use_etag = true
 auth_realm = "TEST Authentication"
 
 host_url = "ldaps://ldap.example.com"
@@ -45,14 +47,18 @@ timeout = 5000
 
 Each parameter of the configuration file is as follows.
 
-* **socket\_type** - Set this parameter to tcp(TCP socket) or unix(UNIX domain socket).
-* **socket\_path** - Set the IP address and port number for tcp, and UNIX domain socket file path for unix.
-* **auth\_realm** - HTTP realm string.
-* **host\_url** - The URL of the LDAP server connection address. The pass part is not used.
-* **start\_tls** - Set to 1 when using TLS STARTTLS.
-* **skip\_cert\_verify** - Set to 1 to ignore the certificate check result.
-* **root\_ca\_files** - A list of PEM files for the CA certificate. Used when the LDAP server is using a certificate from a private CA.
-* **base\_dn** - The base DN when connecting to the LDAP server.
-* **bind\_dn** - This is the bind DN when performing LDAP bind processing. Rewrite `%s` as the remote user name and `%%` as `%`.
-* **uniq\_filter** - Only if this value is set, search with this value filter. If the search result is one DN, the authentication will be successful.
-* **timeout** - Communication timeout(unit: ms) with the LDAP server.
+| Parameter | Description |
+| :--- | :--- |
+| **socket\_type** | Set this parameter to tcp(TCP socket) or unix(UNIX domain socket). |
+| **socket\_path** | Set the IP address and port number for tcp, and UNIX domain socket file path for unix. |
+| **cache\_seconds** | The cache duration in seconds to pass to nginx. However, if its value is 0, it will not use the cache.<br>See [Authentication Cache Control](proxy_cache.md) for details.|
+| **use_etag** | Set to `true` to enable cache validation using `ETag` tags.<br>See [Authentication Cache Control](proxy_cache.md) for details.|
+| **auth\_realm** | HTTP realm string. |
+| **host\_url** | The URL of the LDAP server connection address. The pass part is not used. |
+| **start\_tls** | Set to 1 when using TLS STARTTLS. |
+| **skip\_cert\_verify** | Set to 1 to ignore the certificate check result. |
+| **root\_ca\_files** | A list of PEM files for the CA certificate. Used when the LDAP server is using a certificate from a private CA. |
+| **base\_dn** | The base DN when connecting to the LDAP server. |
+| **bind\_dn** | This is the bind DN when performing LDAP bind processing. Rewrite `%s` as the remote user name and `%%` as `%`. |
+| **uniq\_filter** | Only if this value is set, search with this value filter. If the search result is one DN, the authentication will be successful. |
+| **timeout** | Communication timeout(unit: ms) with the LDAP server. |

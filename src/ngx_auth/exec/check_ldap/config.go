@@ -7,9 +7,11 @@ import (
 )
 
 type NgxLdapAuthConfig struct {
-	SocketType string
-	SocketPath string
-	AuthRealm  string `toml:",omitempty"`
+	SocketType   string
+	SocketPath   string
+	CacheSeconds uint32 `toml:",omitempty"`
+	UseEtag      bool   `toml:",omitempty"`
+	AuthRealm    string `toml:",omitempty"`
 
 	HostUrl        string
 	StartTls       int      `toml:",omitempty"`
@@ -22,10 +24,12 @@ type NgxLdapAuthConfig struct {
 }
 
 type NgxLdapPathAuthConfig struct {
-	SocketType string
-	SocketPath string
-	AuthRealm  string `toml:",omitempty"`
-	PathHeader string `toml:",omitempty"`
+	SocketType   string
+	SocketPath   string
+	CacheSeconds uint32 `toml:",omitempty"`
+	UseEtag      bool   `toml:",omitempty"`
+	AuthRealm    string `toml:",omitempty"`
+	PathHeader   string `toml:",omitempty"`
 
 	Ldap struct {
 		HostUrl        string
@@ -39,11 +43,12 @@ type NgxLdapPathAuthConfig struct {
 	}
 
 	Authz struct {
-		UserMap      string
-		PathPattern  string
-		NomatchRight string            `toml:",omitempty"`
-		DefaultRight string            `toml:",omitempty"`
-		PathRight    map[string]string `toml:",omitempty"`
+		UserMapConfig string `toml:",omitempty"`
+		UserMap       string
+		PathPattern   string
+		NomatchRight  string            `toml:",omitempty"`
+		DefaultRight  string            `toml:",omitempty"`
+		PathRight     map[string]string `toml:",omitempty"`
 	}
 }
 
@@ -75,9 +80,11 @@ func load_ldap_path_auth_config(file string) (*NgxLdapAuthConfig, error) {
 	}
 
 	cfg := &NgxLdapAuthConfig{
-		SocketType: raw_cfg.SocketType,
-		SocketPath: raw_cfg.SocketPath,
-		AuthRealm:  raw_cfg.AuthRealm,
+		SocketType:   raw_cfg.SocketType,
+		SocketPath:   raw_cfg.SocketPath,
+		CacheSeconds: raw_cfg.CacheSeconds,
+		UseEtag:      raw_cfg.UseEtag,
+		AuthRealm:    raw_cfg.AuthRealm,
 
 		HostUrl:        raw_cfg.Ldap.HostUrl,
 		StartTls:       raw_cfg.Ldap.StartTls,

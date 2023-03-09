@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"regexp"
 	"syscall"
+	"time"
 
 	"github.com/l4go/task"
 	"github.com/naoina/toml"
@@ -28,10 +29,12 @@ func warn(format string, v ...interface{}) {
 }
 
 type NgxLdapPathAuthConfig struct {
-	SocketType string
-	SocketPath string
-	AuthRealm  string `toml:",omitempty"`
-	PathHeader string `toml:",omitempty"`
+	SocketType   string
+	SocketPath   string
+	CacheSeconds uint32 `toml:",omitempty"`
+	UseEtag      bool   `toml:",omitempty"`
+	AuthRealm    string `toml:",omitempty"`
+	PathHeader   string `toml:",omitempty"`
 
 	Ldap struct {
 		HostUrl        string
@@ -56,6 +59,8 @@ type NgxLdapPathAuthConfig struct {
 
 var SocketType string
 var SocketPath string
+var CacheSeconds uint32
+var UseEtag bool
 var AuthRealm string
 var LdapAuthConfig *ldap_auth.Config
 
@@ -68,6 +73,8 @@ var NomatchFilter string
 var BanDefault bool
 var DefaultFilter string
 var PathFilter map[string]string
+
+var StartTimeMS int64
 
 func init() {
 	flag.CommandLine.SetOutput(os.Stderr)
@@ -102,6 +109,9 @@ func init() {
 	if SocketType != "tcp" && SocketType != "unix" {
 		die("Bad socket type: %s", SocketType)
 	}
+
+	CacheSeconds = cfg.CacheSeconds
+	UseEtag = cfg.UseEtag
 
 	if cfg.AuthRealm == "" {
 		die("relm is required")
@@ -143,6 +153,8 @@ func init() {
 	}
 
 	PathFilter = cfg.Authz.PathFilter
+
+	StartTimeMS = time.Now().UnixMicro()
 }
 
 var ErrUnsupportedSocketType = errors.New("unsupported socket type.")
