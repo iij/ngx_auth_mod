@@ -66,6 +66,8 @@ func NewUserMapConfig(file string) (*UserMapConfig, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer f.Close()
+
 	cfg := &UserMapConfig{}
 	if err := toml.NewDecoder(f).Decode(cfg); err != nil {
 		return nil, err
