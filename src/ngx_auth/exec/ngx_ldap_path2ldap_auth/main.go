@@ -20,6 +20,8 @@ import (
 	"ngx_auth/ldap_auth"
 )
 
+const DEFAULT_TIMEOUT int = 1000
+
 func die(format string, v ...interface{}) {
 	fmt.Fprintf(os.Stderr, format+"\n", v...)
 	os.Exit(1)
@@ -33,7 +35,7 @@ type NgxLdapPathAuthConfig struct {
 	SocketType        string
 	SocketPath        string
 	CacheSeconds      uint32 `toml:",omitempty"`
-	NegCacheSeconds    uint32 `toml:",omitempty"`
+	NegCacheSeconds   uint32 `toml:",omitempty"`
 	UseEtag           bool   `toml:",omitempty"`
 	UseSerializedAuth bool   `toml:",omitempty"`
 	AuthRealm         string `toml:",omitempty"`
@@ -133,6 +135,14 @@ func init() {
 		PathHeader = cfg.PathHeader
 	}
 
+	if cfg.Ldap.Timeout < 0 {
+		die("bad timeout: %d", cfg.Ldap.Timeout)
+	}
+	tout := DEFAULT_TIMEOUT
+	if cfg.Ldap.Timeout > 0 {
+		tout = cfg.Ldap.Timeout
+	}
+
 	UniqueFilter = cfg.Ldap.UniqFilter
 	LdapAuthConfig = &ldap_auth.Config{
 		HostUrl:        cfg.Ldap.HostUrl,
@@ -142,7 +152,7 @@ func init() {
 		BaseDn:         cfg.Ldap.BaseDn,
 		BindDn:         cfg.Ldap.BindDn,
 		UniqueFilter:   UniqueFilter,
-		Timeout:        cfg.Ldap.Timeout,
+		Timeout:        tout,
 	}
 
 	PathPatternReg, err = regexp.Compile(cfg.Authz.PathPattern)

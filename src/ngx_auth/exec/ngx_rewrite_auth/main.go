@@ -9,16 +9,19 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"regexp"
 	"syscall"
 	"time"
 
 	"github.com/l4go/task"
 	"github.com/naoina/toml"
 
-	"ngx_auth/authz"
 	"ngx_auth/htstat"
+	"ngx_auth/http_auth"
+	"ngx_auth/htval"
 )
+
+const DEFAULT_USER_AGENT = "ngx_auth_mod"
+const DEFAULT_TIMEOUT int = 1000
 
 func die(format string, v ...interface{}) {
 	fmt.Fprintf(os.Stderr, format+"\n", v...)
@@ -29,45 +32,44 @@ func warn(format string, v ...interface{}) {
 	fmt.Fprintf(os.Stderr, format+"\n", v...)
 }
 
-type NgxHeaderPathAuthConfig struct {
-	SocketType      string
-	SocketPath      string
-	CacheSeconds    uint32 `toml:",omitempty"`
-	NegCacheSeconds uint32 `toml:",omitempty"`
-	UseEtag         bool   `toml:",omitempty"`
-	PathHeader      string `toml:",omitempty"`
-	UserHeader      string `toml:",omitempty"`
+type RewriteAuthConfig struct {
+	SocketType        string
+	SocketPath        string
+	CacheSeconds      uint `toml:",omitempty"`
+	NegCacheSeconds   uint `toml:",omitempty"`
+	UseEtag           bool `toml:",omitempty"`
+	UseSerializedAuth bool `toml:",omitempty"`
+	AuthRealm         string
+	UserAgent         string `toml:",omitempty"`
 
-	Authz struct {
-		UserMapConfig string `toml:",omitempty"`
-		UserMap       string
-		PathPattern   string
-		NomatchRight  string            `toml:",omitempty"`
-		DefaultRight  string            `toml:",omitempty"`
-		PathRight     map[string]string `toml:",omitempty"`
-	}
+	UsernameRe     htval.HtPattern `toml:",omitempty"`
+	AuthUrl        http_auth.HtAuthAddr
+	SetUsername    htval.HtValue     `toml:",omitempty"`
+	SetPassword    htval.HtValue     `toml:",omitempty"`
+	SetHeader      htval.HtSetHeader `toml:",omitempty"`
+	SkipCertVerify bool              `toml:",omitempty"`
+	RootCaFiles    []string          `toml:",omitempty"`
+	Timeout        int               `toml:",omitempty"`
 
 	Response htstat.HttpStatusTbl `toml:",omitempty"`
 }
 
-var SocketType string
-var SocketPath string
-var CacheSeconds uint32
-var NegCacheSeconds uint32
-var UseEtag bool
-
-var PathHeader = "X-Authz-Path"
-var PathPatternReg *regexp.Regexp
-var UserHeader = "X-Forwarded-User"
-
-var UserMap *authz.UserMap = nil
-var NomatchRight string
-var DefaultRight string
-var PathRight map[string]string
-
-var HttpResponse htstat.HttpStatusTbl
+var (
+	SocketType         string
+	SocketPath         string
+	CacheSeconds       uint = 0
+	NegCacheSeconds    uint = 0
+	UseEtag            bool
+	UseSerializedAuth  bool
+	AuthRealm          string
+	UserAgent          string = DEFAULT_USER_AGENT
+	Timeout            int    = DEFAULT_TIMEOUT
+	SystemHttpResponse htstat.HttpStatusTbl
+)
 
 var StartTimeMS int64
+
+var RewriteAgent *http_auth.RewriteAgent
 
 func init() {
 	flag.CommandLine.SetOutput(os.Stderr)
@@ -91,7 +93,7 @@ func init() {
 	}
 	defer cfg_f.Close()
 
-	cfg := &NgxHeaderPathAuthConfig{}
+	cfg := &RewriteAuthConfig{}
 	if err := toml.NewDecoder(cfg_f).Decode(&cfg); err != nil {
 		die("Config file parse error: %s", err)
 	}
@@ -106,50 +108,26 @@ func init() {
 	CacheSeconds = cfg.CacheSeconds
 	NegCacheSeconds = cfg.NegCacheSeconds
 	UseEtag = cfg.UseEtag
+	UseSerializedAuth = cfg.UseSerializedAuth
 
-	if cfg.PathHeader != "" {
-		PathHeader = cfg.PathHeader
+	if cfg.AuthRealm == "" {
+		die("relm is required")
+	}
+	AuthRealm = cfg.AuthRealm
+
+	if cfg.UserAgent != "" {
+		UserAgent = cfg.UserAgent
 	}
 
-	if cfg.UserHeader != "" {
-		UserHeader = cfg.UserHeader
+	if cfg.AuthUrl.IsZero() {
+		die("auth_url is required")
 	}
 
-	var user_map_cfg *authz.UserMapConfig
-	user_map_cfg, err = authz.NewUserMapConfig(cfg.Authz.UserMapConfig)
-	if err != nil {
-		die("user map config parse error: %s: %s",
-			cfg.Authz.UserMapConfig, err)
-		return
+	if cfg.Timeout < 0 {
+		die("bad timeout: %d", cfg.Timeout)
 	}
-
-	UserMap, err = authz.NewUserMap(cfg.Authz.UserMap, user_map_cfg)
-	if err != nil {
-		die("user map parse error: %s: %s", cfg.Authz.UserMap, err)
-		return
-	}
-
-	PathPatternReg, err = regexp.Compile(cfg.Authz.PathPattern)
-	if err != nil {
-		die("path pattern error: %s", cfg.Authz.PathPattern)
-		return
-	}
-
-	NomatchRight = cfg.Authz.NomatchRight
-	if !authz.VerifyAuthzType(NomatchRight) {
-		die("bad nomatch_right parameter: %s", NomatchRight)
-	}
-
-	DefaultRight = cfg.Authz.DefaultRight
-	if !authz.VerifyAuthzType(DefaultRight) {
-		die("bad default_path_right parameter: %s", DefaultRight)
-	}
-
-	PathRight = cfg.Authz.PathRight
-	for p, r := range PathRight {
-		if !authz.VerifyAuthzType(r) {
-			die("bad path_right parameter: %s -> %s", p, r)
-		}
+	if cfg.Timeout > 0 {
+		Timeout = cfg.Timeout
 	}
 
 	cfg.Response.SetDefault()
@@ -157,7 +135,23 @@ func init() {
 		die("response code config error.")
 		return
 	}
-	HttpResponse = cfg.Response
+	SystemHttpResponse = cfg.Response
+
+	RewriteAgent = http_auth.NewRewriteAgent(&http_auth.RewriteAgentConfig{
+		UsernameRe: cfg.UsernameRe.Regexp,
+
+		UserAgent: UserAgent,
+		AuthAddr:  cfg.AuthUrl,
+
+		SetUsernameVal: cfg.SetUsername,
+		SetPasswordVal: cfg.SetPassword,
+		SetHeadersVal:  cfg.SetHeader,
+
+		SkipCertVerify: cfg.SkipCertVerify,
+		RootCaFiles:    cfg.RootCaFiles,
+
+		Timeout: time.Duration(Timeout) * time.Millisecond,
+	})
 
 	StartTimeMS = time.Now().UnixMicro()
 }
@@ -205,7 +199,7 @@ func main() {
 	}
 	if SocketType == "unix" {
 		defer os.Remove(SocketPath)
-		os.Chmod(SocketPath, 0777)
+		os.Chmod(SocketPath, 0o777)
 	}
 
 	serr := srv.Serve(lstn)

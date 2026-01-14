@@ -89,29 +89,29 @@ default_right = "*/
 
 |パラメータ名|意味|
 | :--- | :--- |
-| **code** | 認可された時のHTTP レスポンスステータスコード(デフォルト値は`200`)<br>この値は[auth request module]によって利用されるため、変更すると誤動作の可能性があります。 |
-| **message** | 認可された時のHTTP レスポンスメッセージ(デフォルト値は`"Authorized"`) |
+| **code** | 認可された時のHTTPレスポンスステータスコード(デフォルト値は`200`)<br>この値は[auth request module]によって利用されるため、変更すると誤動作の可能性があります。 |
+| **message** | 認可された時のHTTPレスポンスメッセージ(デフォルト値は`"Authorized"`) |
 
 ### **\[response.forbidden\]** 部分
 
 |パラメータ名|意味|
 | :--- | :--- |
-| **code** | 認可失敗時のHTTP レスポンスステータスコード(デフォルト値は`403`)<br>この値は[auth request module]によって利用されるため、変更すると誤動作の可能性があります。 |
-| **message** | 認可失敗時のHTTP レスポンスメッセージ(デフォルト値は`"Forbidden"`) |
+| **code** | 認可失敗時のHTTPレスポンスステータスコード(デフォルト値は`403`)<br>この値は[auth request module]によって利用されるため、変更すると誤動作の可能性があります。 |
+| **message** | 認可失敗時のHTTPレスポンスメッセージ(デフォルト値は`"Forbidden"`) |
 
 ### **\[response.nopath\]** 部分
 
 |パラメータ名|意味|
 | :--- | :--- |
-| **code** | **path\_header**で想定していないHTTPヘッダーである場合のHTTP レスポンスステータスコード(デフォルト値は`403`)<br>この値は[auth request module]によって利用されるため、変更すると誤動作の可能性があります。 |
-| **message** | **path\_header**で想定していないHTTPヘッダーである場合のHTTP レスポンスステータスコード(デフォルト値は`"No path header"`) |
+| **code** | **path\_header**で想定していないHTTPヘッダーである場合のHTTPレスポンスステータスコード(デフォルト値は`403`)<br>この値は[auth request module]によって利用されるため、変更すると誤動作の可能性があります。 |
+| **message** | **path\_header**で想定していないHTTPヘッダーである場合のHTTPレスポンスステータスコード(デフォルト値は`"No path header"`) |
 
 ### **\[response.nouser\]** 部分
 
 |パラメータ名|意味|
 | :--- | :--- |
-| **code** | **user\_header**で想定していないHTTPヘッダーである場合のHTTP レスポンスステータスコード(デフォルト値は`403`)<br>この値は[auth request module]によって利用されるため、変更すると誤動作の可能性があります。 |
-| **message** | **user\_header**で想定していないHTTPヘッダーである場合のHTTP レスポンスステータスコード(デフォルト値は`"No user header"`) |
+| **code** | **user\_header**で想定していないHTTPヘッダーである場合のHTTPレスポンスステータスコード(デフォルト値は`403`)<br>この値は[auth request module]によって利用されるため、変更すると誤動作の可能性があります。 |
+| **message** | **user\_header**で想定していないHTTPヘッダーである場合のHTTPレスポンスステータスコード(デフォルト値は`"No user header"`) |
 
 ## 認可権限の詳細
 

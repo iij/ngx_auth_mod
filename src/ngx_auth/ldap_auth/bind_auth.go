@@ -3,7 +3,7 @@ package ldap_auth
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -73,7 +73,7 @@ func NewLdapAuth(cfg *Config) (*LdapAuth, error) {
 	ca_pool := x509.NewCertPool()
 	if len(cfg.RootCaFiles) > 0 {
 		for _, fn := range cfg.RootCaFiles {
-			ca_pem, e := ioutil.ReadFile(fn)
+			ca_pem, e := os.ReadFile(fn)
 			if e != nil {
 				return nil, e
 			}

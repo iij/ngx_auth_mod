@@ -1,4 +1,4 @@
-# Authentication cache control
+# Authentication Cache Control
 
 ngx\_auth\_mod has a mechanism to cache authentication results in the [nginx proxy module](http://nginx.org/en/docs/http/ngx_http_proxy_module.html) for busy server.
 
@@ -218,9 +218,14 @@ Caution: Without understanding, enabling cache validation can be dangerous.
 
 The following modules can enable cache validation using the `ETag` and `If-None-Match` headers.
 
+- [ngx\_simple\_auth](ngx_simple_auth.md)
+- [ngx\_header\_path\_auth](ngx_header_path_auth.md)
 - [ngx\_ldap\_auth](ngx_ldap_auth.md)
 - [ngx\_ldap\_path\_auth](ngx_ldap_path_auth.md)
 - [ngx\_ldap\_path2ldap\_auth](ngx_ldap_path2ldap_auth.md)
+- [ngx\_rewrite\_and\_auth](ngx_rewrite_and_auth.md)
+- [ngx\_rewrite\_auth](ngx_rewrite_auth.md)
+- [ngx\_rewrite\_switch\_auth](ngx_rewrite_switch_auth.md)
 
 If the cache validation succeeds, the LDAP server call is skipped and the nginx cache period is updated.
 Therefore, it is used to further reduce the load on the LDAP server.

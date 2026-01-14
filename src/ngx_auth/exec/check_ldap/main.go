@@ -10,6 +10,8 @@ import (
 	"ngx_auth/ldap_auth"
 )
 
+const DEFAULT_TIMEOUT int = 1000
+
 func die(format string, v ...interface{}) {
 	fmt.Fprintf(os.Stderr, format+"\n", v...)
 	os.Exit(1)
@@ -78,6 +80,14 @@ func init() {
 		die("relm is required")
 	}
 
+	if cfg.Timeout < 0 {
+		die("bad timeout: %d", cfg.Timeout)
+	}
+	tout := DEFAULT_TIMEOUT
+	if cfg.Timeout > 0 {
+		tout = cfg.Timeout
+	}
+
 	LdapAuthConfig = &ldap_auth.Config{
 		HostUrl:        cfg.HostUrl,
 		StartTls:       cfg.StartTls != 0,
@@ -86,7 +96,7 @@ func init() {
 		BaseDn:         cfg.BaseDn,
 		BindDn:         cfg.BindDn,
 		UniqueFilter:   cfg.UniqFilter,
-		Timeout:        cfg.Timeout,
+		Timeout:        tout,
 	}
 
 	Username = flag.Arg(1)

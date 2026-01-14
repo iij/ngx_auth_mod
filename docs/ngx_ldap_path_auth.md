@@ -103,7 +103,7 @@ Each parameter of the configuration file is as follows.
 | **base\_dn** | The base DN when connecting to the LDAP server. |
 | **bind\_dn** | This is the bind DN when performing LDAP bind processing. Rewrite `%s` as the remote user name and `%%` as `%`. |
 | **uniq\_filter** | Only if this value is set, search with this value filter. If the search result is one DN, the authentication will be successful. |
-| **timeout** | Communication timeout(unit: ms) with the LDAP server. |
+| **timeout** | Communication timeout(unit: ms) with the LDAP server. (Default value: `1000`) |
 
 ### **\[authz\]** part
 
