@@ -1,12 +1,12 @@
 
 # 認証キャッシュ制御
 
-ngx\_auth\_modは、アクセス負荷が高い状況向けに、[nginx\ proxy\ module](http://nginx.org/en/docs/http/ngx_http_proxy_module.html)へ認証結果をキャッシュさせる仕組みを持っています。
+ngx\_auth\_modは、アクセス負荷が高い状況向けに、[nginx proxy module](http://nginx.org/en/docs/http/ngx_http_proxy_module.html)へ認証結果をキャッシュさせる仕組みを持っています。
 
 # キャッシュの無効化
 
 処理速度が十分であれば、キャッシュする必要はありません。
-そして、nginxの[auth\ request\ module](http://nginx.org/en/docs/http/ngx_http_auth_request_module.html)向けの認証結果を、理解なくキャッシュすると危険です。  
+そして、nginxの[auth request module](http://nginx.org/en/docs/http/ngx_http_auth_request_module.html)向けの認証結果を、理解なくキャッシュすると危険です。  
 ですから、もし、設定が難しいのなら、認証結果のキャッシュは無効にすべきです。
 
 ## nginxキャッシュの無効化
@@ -225,6 +225,9 @@ neg_cache_seconds = 1
 - [ngx\_ldap\_auth](ngx_ldap_auth.md)
 - [ngx\_ldap\_path\_auth](ngx_ldap_path_auth.md)
 - [ngx\_ldap\_path2ldap\_auth](ngx_ldap_path2ldap_auth.md)
+- [ngx\_rewrite\_and\_auth](ngx_rewrite_and_auth.md)
+- [ngx\_rewrite\_auth](ngx_rewrite_auth.md)
+- [ngx\_rewrite\_switch\_auth](ngx_rewrite_switch_auth.md)
 
 キャッシュ検証が成功すると、認証処理が省略されて、nginxのキャッシュ期間が更新されます。
 そのため、LDAPサーバの負荷をさらに減らしたいときなどに使います。

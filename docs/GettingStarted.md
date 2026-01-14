@@ -93,6 +93,12 @@ The documents of each modules are available in separate pages.
     - [documentation of ngx\_header\_path\_auth](../docs/README.md#ngx_header_path_auth)
  - ngx\_ldap\_path2ldap\_auth module
     - [documentation of ngx\_ldap\_path2ldap\_auth](../docs/README.md#ngx_ldap_path2ldap_auth)
+ - ngx\_rewrite\_auth module
+    - [documentation of ngx\_rewrite\_auth](../docs/README.md#ngx_rewrite_auth)
+ - ngx\_rewrite\_and\_auth module
+    - [documentation of ngx\_rewrite\_and\_auth](../docs/README.md#ngx_rewrite_and_auth)
+ - ngx\_rewrite\_switch\_auth module
+    - [documentation of ngx\_rewrite\_switch\_auth](../docs/README.md#ngx_rewrite_switch_auth)
 
 Select any of the authentication module depending on your requirement and place it to the location you prefer.  
 In the next section, the ngx\_ldap\_auth module will be used as an example.
@@ -119,6 +125,12 @@ The documents of each configuration file are provided separately.
     - [documentation of ngx\_header\_path\_auth configuration file](../docs/ngx_header_path_auth.md)
  - ngx\_ldap\_path2ldap\_auth module
     - [documentation of ngx\_ldap\_path2ldap\_auth configuration file](../docs/ngx_ldap_path2ldap_auth.md)
+ - ngx\_rewrite\_auth module
+    - [documentation of ngx\_rewrite\_auth configuration file](../docs/ngx_rewrite_auth.md)
+ - ngx\_rewrite\_and\_auth module
+    - [documentation of ngx\_rewrite\_and\_auth configuration file](../docs/ngx_rewrite_and_auth.md)
+ - ngx\_rewrite\_switch\_auth module
+    - [documentation of ngx\_rewrite\_switch\_auth configuration file](../docs/ngx_rewrite_switch_auth.md)
 
 In this GettingStarted documentation, ngx\_ldap\_auth module is used as an example.  
 Therefore, edit the `auth-ldap.conf` file to fit your LDAP schema.  
@@ -139,7 +151,7 @@ Create a directory with the following command:
 These directories are popular directries when customising nginx.
 
 Next, create a new configuration file of nginx as `auth-webserver.conf`.  
-This configuration file is used to launch reverse proxy (443/TCP), web server (80/TCP), and ngx\_auth\_mod module (Any port number/TCP).  
+This configuration file is used to launch reverse proxy (443/TCP), web server (localhost 80/TCP), and ngx\_auth\_mod module (Any port number/TCP).  
 FYI, an example `auth-webserver.conf` is shown below.
 
 ```
@@ -185,9 +197,9 @@ server {
 		proxy_pass http://localhost:80/;
 	}
 }
-# Web Server(80/TCP)
+# Web Server(localhost 80/TCP)
 server {
-	listen 80 default;
+	listen localhost:80 default;
 
 	server_name localhost;
 	client_max_body_size 1G;

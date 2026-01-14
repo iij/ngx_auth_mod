@@ -89,6 +89,12 @@ ngx\_auth\_mod のビルドは以下の手順で進めます。
     - [ngx\_header\_path\_auth ドキュメント](../docs_ja/README.md#ngx_header_path_auth)
  - ngx\_ldap\_path2ldap\_auth
     - [ngx\_ldap\_path2ldap\_auth ドキュメント](../docs_ja/README.md#ngx_ldap_path2ldap_auth)
+ - ngx\_rewrite\_auth
+    - [ngx\_rewrite\_auth ドキュメント](../docs_ja/README.md#ngx_rewrite_auth)
+ - ngx\_rewrite\_and\_auth
+    - [ngx\_rewrite\_and\_auth ドキュメント](../docs_ja/README.md#ngx_rewrite_and_auth)
+ - ngx\_rewrite\_switch\_auth
+    - [ngx\_rewrite\_switch\_auth ドキュメント](../docs_ja/README.md#ngx_rewrite_switch_auth)
 
 認証(/認可)のモジュールを用途に応じて選択し、任意の場所へ配置してください。  
 以降の説明で扱うサンプルは ngx\_ldap\_auth を例に挙げます。
@@ -114,6 +120,12 @@ ngx\_auth\_mod モジュールの認証(/認可)の制約を設定ファイル�
     - [ngx\_header\_path\_auth 設定ファイル ドキュメント](../docs_ja/ngx_header_path_auth.md)
  - ngx\_ldap\_path2ldap\_auth モジュール
     - [ngx\_ldap\_path2ldap\_auth 設定ファイル ドキュメント](../docs_ja/ngx_ldap_path2ldap_auth.md)
+ - ngx\_rewrite\_auth モジュール
+    - [ngx\_rewrite\_auth 設定ファイル ドキュメント](../docs_ja/ngx_rewrite_auth.md)
+ - ngx\_rewrite\_and\_auth モジュール
+    - [ngx\_rewrite\_and\_auth 設定ファイル ドキュメント](../docs_ja/ngx_rewrite_and_auth.md)
+ - ngx\_rewrite\_switch\_auth モジュール
+    - [ngx\_rewrite\_switch\_auth 設定ファイル ドキュメント](../docs_ja/ngx_rewrite_switch_auth.md)
 
 ここでは ngx\_ldap\_auth モジュールを扱うため `auth-ldap.conf` を自身の環境にあわせて編集してください。  
 また、`auth-ldap.conf` を任意の場所に配置してください。
@@ -130,7 +142,7 @@ nginx の設定ファイルは `/usr/local/nginx/conf/nginx.conf` に配置さ�
  - `mkdir /usr/local/nginx/sites-available`
  - `mkdir /usr/local/nginx/sites-enabled`
 
-次に、リバースプロキシ(443/TCP)、Webサーバ（80/TCP)、ngx\_ldap\_auth モジュール（任意のポート/TCP）を nginx で起動する設定ファイルを作成します。  
+次に、リバースプロキシ(443/TCP)、Webサーバ（localhost 80/TCP)、ngx\_ldap\_auth モジュール（任意のポート/TCP）を nginx で起動する設定ファイルを作成します。  
 以下に、サンプルを示します。
 
 ```
@@ -176,9 +188,9 @@ server {
 		proxy_pass http://localhost:80/;
 	}
 }
-# Web Server(80/TCP)
+# Web Server(localhost 80/TCP)
 server {
-	listen 80 default;
+	listen localhost:80 default;
 
 	server_name localhost;
 	client_max_body_size 1G;
