@@ -28,13 +28,13 @@ func warn(format string, v ...interface{}) {
 }
 
 type TestAuthConfig struct {
-	SocketType     string
-	SocketPath     string
-	CacheSeconds   uint `toml:",omitempty"`
+	SocketType      string
+	SocketPath      string
+	CacheSeconds    uint `toml:",omitempty"`
 	NegCacheSeconds uint `toml:",omitempty"`
-	UseEtag        bool `toml:",omitempty"`
-	Password       map[string]string
-	AuthRealm      string
+	UseEtag         bool `toml:",omitempty"`
+	Password        map[string]string
+	AuthRealm       string
 
 	Response htstat.HttpStatusTbl `toml:",omitempty"`
 }

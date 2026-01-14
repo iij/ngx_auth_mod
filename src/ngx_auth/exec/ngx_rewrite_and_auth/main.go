@@ -16,9 +16,11 @@ import (
 	"github.com/naoina/toml"
 
 	"ngx_auth/htstat"
-	"ngx_auth/ldap_auth"
+	"ngx_auth/http_auth"
+	"ngx_auth/htval"
 )
 
+const DEFAULT_USER_AGENT = "ngx_auth_mod"
 const DEFAULT_TIMEOUT int = 1000
 
 func die(format string, v ...interface{}) {
@@ -30,38 +32,53 @@ func warn(format string, v ...interface{}) {
 	fmt.Fprintf(os.Stderr, format+"\n", v...)
 }
 
-type NgxLdapAuthConfig struct {
-	SocketType        string
-	SocketPath        string
-	CacheSeconds      uint32 `toml:",omitempty"`
-	NegCacheSeconds   uint32 `toml:",omitempty"`
-	UseEtag           bool   `toml:",omitempty"`
-	UseSerializedAuth bool   `toml:",omitempty"`
-	AuthRealm         string `toml:",omitempty"`
+type AndConfig struct {
+	UsernameRe htval.HtPattern `toml:",omitempty"`
 
-	HostUrl        string
-	StartTls       int      `toml:",omitempty"`
-	SkipCertVerify int      `toml:",omitempty"`
-	RootCaFiles    []string `toml:",omitempty"`
-	BaseDn         string
-	BindDn         string
-	UniqFilter     string `toml:",omitempty"`
-	Timeout        int    `toml:",omitempty"`
+	AuthUrl        http_auth.HtAuthAddr
+	SetUsername    htval.HtValue     `toml:",omitempty"`
+	SetPassword    htval.HtValue     `toml:",omitempty"`
+	SetHeader      htval.HtSetHeader `toml:",omitempty"`
+	SkipCertVerify bool              `toml:",omitempty"`
+	RootCaFiles    []string          `toml:",omitempty"`
+	Timeout        int               `toml:",omitempty"`
 
 	Response htstat.HttpStatusTbl `toml:",omitempty"`
 }
 
-var SocketType string
-var SocketPath string
-var CacheSeconds uint32
-var NegCacheSeconds uint32
-var UseEtag bool
-var AuthRealm string
-var UseSerializedAuth bool
+type RewriteAndConfig struct {
+	SocketType        string
+	SocketPath        string
+	CacheSeconds      uint `toml:",omitempty"`
+	NegCacheSeconds   uint `toml:",omitempty"`
+	UseEtag           bool `toml:",omitempty"`
+	UseSerializedAuth bool `toml:",omitempty"`
+	AuthRealm         string
+	UserAgent         string `toml:",omitempty"`
 
-var LdapAuthConfig *ldap_auth.Config
-var HttpResponse htstat.HttpStatusTbl
+	And []AndConfig
 
+	Response htstat.HttpStatusTbl `toml:",omitempty"`
+}
+
+type AndParam struct {
+	RewriteAgent *http_auth.RewriteAgent
+	HttpResponse htstat.HttpStatusTbl
+}
+
+var (
+	SocketType         string
+	SocketPath         string
+	CacheSeconds       uint = 0
+	NegCacheSeconds    uint = 0
+	UseEtag            bool
+	UseSerializedAuth  bool
+	AuthRealm          string
+	UserAgent          string = DEFAULT_USER_AGENT
+	SystemHttpResponse htstat.HttpStatusTbl
+)
+
+var AndParamList []*AndParam
 var StartTimeMS int64
 
 func init() {
@@ -86,7 +103,7 @@ func init() {
 	}
 	defer cfg_f.Close()
 
-	cfg := &NgxLdapAuthConfig{}
+	cfg := &RewriteAndConfig{}
 	if err := toml.NewDecoder(cfg_f).Decode(&cfg); err != nil {
 		die("Config file parse error: %s", err)
 	}
@@ -108,23 +125,8 @@ func init() {
 	}
 	AuthRealm = cfg.AuthRealm
 
-	if cfg.Timeout < 0 {
-		die("bad timeout: %d", cfg.Timeout)
-	}
-	tout := DEFAULT_TIMEOUT
-	if cfg.Timeout > 0 {
-		tout = cfg.Timeout
-	}
-
-	LdapAuthConfig = &ldap_auth.Config{
-		HostUrl:        cfg.HostUrl,
-		StartTls:       cfg.StartTls != 0,
-		SkipCertVerify: cfg.SkipCertVerify != 0,
-		RootCaFiles:    cfg.RootCaFiles,
-		BaseDn:         cfg.BaseDn,
-		BindDn:         cfg.BindDn,
-		UniqueFilter:   cfg.UniqFilter,
-		Timeout:        tout,
+	if cfg.UserAgent != "" {
+		UserAgent = cfg.UserAgent
 	}
 
 	cfg.Response.SetDefault()
@@ -132,7 +134,45 @@ func init() {
 		die("response code config error.")
 		return
 	}
-	HttpResponse = cfg.Response
+	SystemHttpResponse = cfg.Response
+
+	AndParamList = make([]*AndParam, 0, len(cfg.And))
+	for _, acfg := range cfg.And {
+		if acfg.AuthUrl.IsZero() {
+			die("[[and]] auth_url is required")
+		}
+
+		acfg.Response.SetDefaultByTbl(&SystemHttpResponse)
+		if !acfg.Response.IsValid() {
+			die("response code config error.")
+			return
+		}
+
+		if acfg.Timeout < 0 {
+			die("bad timeout: %d", acfg.Timeout)
+		}
+		tout := DEFAULT_TIMEOUT
+		if acfg.Timeout > 0 {
+			tout = acfg.Timeout
+		}
+
+		rw_agt := http_auth.NewRewriteAgent(&http_auth.RewriteAgentConfig{
+			UsernameRe:     acfg.UsernameRe.Regexp,
+			UserAgent:      UserAgent,
+			AuthAddr:       acfg.AuthUrl,
+			SetUsernameVal: acfg.SetUsername,
+			SetPasswordVal: acfg.SetPassword,
+			SetHeadersVal:  acfg.SetHeader,
+			SkipCertVerify: acfg.SkipCertVerify,
+			RootCaFiles:    acfg.RootCaFiles,
+			Timeout:        time.Duration(tout) * time.Millisecond,
+		})
+
+		AndParamList = append(AndParamList, &AndParam{
+			RewriteAgent: rw_agt,
+			HttpResponse: acfg.Response,
+		})
+	}
 
 	StartTimeMS = time.Now().UnixMicro()
 }
@@ -180,7 +220,7 @@ func main() {
 	}
 	if SocketType == "unix" {
 		defer os.Remove(SocketPath)
-		os.Chmod(SocketPath, 0777)
+		os.Chmod(SocketPath, 0o777)
 	}
 
 	serr := srv.Serve(lstn)
