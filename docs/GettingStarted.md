@@ -3,7 +3,7 @@
 ## About
 
 This document describes the installation procedure of the ngx\_auth\_mod.  
-The outline of the installation procesure is shown below.
+The outline of the installation procedure is shown below.
 
  1. Install nginx
  2. Build ngx\_auth\_mod modules
